@@ -11,10 +11,10 @@ jobs:
       matrix:
         include:
           - dockerfile: ./backend/Dockerfile
-            image: ${{ secrets.DOCKERHUB_USERNAME }}/example-backend
+            image: nourajaz/example-backend
             context: ./backend
           - dockerfile: /frontend/Dockerfile
-            image: ${{ secrets.DOCKERHUB_TOKEN }}/example-frontend
+            image: nourajaz/example-frontend
             context: ./frontend
     steps:
       - name: Checkout code
