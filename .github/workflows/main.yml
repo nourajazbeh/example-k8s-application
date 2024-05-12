@@ -30,14 +30,14 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-  upload_to_s3:
+  upload_to_S3:
     steps:
-      - name: upload to s3
+      - name: upload to S3
         run-on: ubunto-latest
     steps:
-      - name: Upload  to s3
+      - name: Upload  to S3
         run:
-          aws s3 sync frontend/build s3://$AWS_S3_BUCKET/ --acl public-read
+          aws S3 sync frontend/build s3://$AWS_S3_BUCKET/ --acl public-read
 
      build_and_deploy_backend:
       - name: Build and Deploy Backend
