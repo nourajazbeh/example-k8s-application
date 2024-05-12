@@ -1,0 +1,74 @@
+name: CI/CD Pipeline
+on: [push]
+env:
+  AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+  PRIVAT_KEY: ${{ secrets.EC2_PRIVATE_KEY}} 
+jobs:
+  run_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'latest'
+      - name: Build
+        run: |
+          cd frontend
+          npm install
+          npm run build
+          ls -la
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend
+          path: frontend/dist/frontend/browser
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+  upload_to_s3:
+    steps:
+      - name: upload to s3
+        run-on: ubunto-latest
+    steps:
+      - name: Upload  to s3
+        run:
+          aws s3 sync frontend/build s3://$AWS_S3_BUCKET/ --acl public-read
+
+     build_and_deploy_backend:
+      - name: Build and Deploy Backend
+        runs-on: ubuntu-latest
+                
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4 
+            
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Build and push backend Docker image
+        run: |
+             docker build -t ${{ secrets.DOCKER_USERNAME }}/backend-image:${{ github.run_number }} .
+             docker push ${{ secrets.DOCKER_USERNAME }}/backend-image:${{ github.run_number }}
+             docker tag ${{ secrets.DOCKER_USERNAME }}/backend-image:${{ github.run_number }} ${{ secrets.DOCKER_USERNAME }}/backend-image:latest
+             docker push ${{ secrets.DOCKER_USERNAME }}/backend-image:latest
+    
+      - name: Install Docker on EC2
+        run: |
+             echo "$SSH_PRIVATE_KEY" > ./private_key.pem
+             chmod 600 ./private_key.pem
+             ssh -i ./private_key.pem -o StrictHostKeyChecking=no $EC2_HOST "
+             sudo yum update -y
+             sudo yum install -y docker
+             sudo service docker start
+             sudo docker run -d -p 80:5000 $DOCKER_USERNAME/backend-image:latest
+             "
+
+
+  
